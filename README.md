@@ -16,7 +16,7 @@ Homo_sapiens_assembly38.fasta
 Homo_sapiens.GRCh38.105.gff3.gz # from Ensembl ftp site 
 
 **VCF**   
-Joint called VCF file for cohort was created using GATK's HaplotypeCaller, GenomicsBDImport, VariantQualityScoreRecalibration. The VCF had to be decomposed before running Slivar. Variant sites were annotated with bcftools csq and Ensembl's GFF3 file for Hg38. 
+Joint called VCF file for cohort was created using GATK. The VCF had to be decomposed before running Slivar. Variant sites were annotated with bcftools csq and Ensembl's GFF3 file for Hg38. Commands for both of these steps are included in the script. 
 
 **pedigree**  
 
