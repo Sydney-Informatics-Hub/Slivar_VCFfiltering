@@ -1,0 +1,74 @@
+#!/bin/bash
+
+##########################################################################
+#
+# Platform: USyd Artemis HPC
+# Usage: qsub run_slivar.sh
+#
+# For more details see: https://github.com/Sydney-Informatics-Hub/Slivar_VCFfiltering
+#
+# If you use this script towards a publication, please acknowledge the
+# Sydney Informatics Hub (or co-authorship, where appropriate).
+#
+# Suggested acknowledgement:
+# The authors acknowledge the support provided by the Sydney Informatics Hub,
+# a Core Research Facility of the University of Sydney.
+#
+##########################################################################
+
+#PBS -P SIH
+#PBS -N slivar
+#PBS -l select=1:ncpus=10:mem=10GB
+#PBS -l walltime=01:00:00
+#PBS -m e
+#PBS -M georgina.samaha@sydney.edu.au
+#PBS -q defaultQ
+#PBS -W umask=022
+#PBS -e ./Logs/slivar.e
+#PBS -o ./Logs/slivar.o
+
+# this script was used to collect de novo, recessive and compound heterozygous variants 
+
+# define variables
+out= #output directory
+vcf= #path/to/vcf to be filtered
+decomp_vcf= #name of decomposed vcf
+anno_vcf= #name of filtered decomposed vcf
+ped= #path/to/ped 
+ref= #reference directory
+fasta= #/path/to/fasta
+gff3= #ensembl genome annotation file
+gnomad= #annotation file 
+cohort= #name of cohort
+js= #Slivar expressions file. Downloaded from https://github.com/brentp/slivar/blob/master/js/slivar-functions.js
+
+# load modules
+module load slivar/0.2.7
+module load bcftools/1.14
+
+# set up logs directory
+mkdir -p ./Logs
+
+# decompose vcf (slivar recommendation)
+bcftools norm -a -m-both -Oz ${vcf} -o ${decomp_vcf}
+
+# annotate variants with gff3
+bcftools csq  -s- --ncsq 40 -g $gff3 -l -f $fasta $vcf -Oz -o ${anno_vcf}
+
+# filter variants from annotated, decomposed VCF
+slivar expr --vcf ${anno_vcf} \
+    --ped $ped \
+    --js $js \
+    -o ${out}/${cohort}.vcf \
+    --pass-only \
+    -g ${gnomad} \
+    --info 'INFO.impactful && INFO.gnomad_popmax_af < 0.01 && variant.FILTER == "PASS" && variant.ALT[0] != "*"' \
+    --family-expr 'denovo:fam.every(segregating_denovo) && INFO.gnomad_popmax_af < 0.01' \
+    --family-expr 'recessive:fam.every(segregating_recessive)'\
+    --family-expr 'x_denovo:(variant.CHROM == "X" || variant.CHROM == "chrX") && fam.every(segregating_denovo_x)' \
+    --family-expr 'x_recessive:(variant.CHROM == "X" || variant.CHROM == "chrX") && fam.every(segregating_recessive)' \
+    --trio 'comphet_side:comphet_side(kid, mom, dad)'
+
+# comphets on slivar vcf
+slivar compound-hets -v ${out}/${cohort}.vcf \
+    --sample-field comphet_side --sample-field denovo -p $ped >  ${out}/$cohort.ch.vcf
