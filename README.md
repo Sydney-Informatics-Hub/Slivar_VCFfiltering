@@ -42,3 +42,6 @@ On Usyd Artemis HPC, run as:
 This script annotated the cohort VCF using the GFF3 file, and prepared it for Slivar and output two filtered VCF files. One containing all rare impactful variants that matched de novo, recessive, and comphet expressions in each trio. The other VCF contained trans compound het variants.  
 
 Reformatted Slivar .vcfs to .tsv using `tsv_slivar.sh`. On USyd Artemis HPC, run as: `bash tsv_slivar.sh`   
+
+## Resources 
+[Slivar github repository and documentation](https://github.com/brentp/slivar)
